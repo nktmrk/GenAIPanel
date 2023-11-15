@@ -7,8 +7,8 @@ import {
   Provider,
   Button,
   View,
-  ActionButton,
   Text,
+  darkTheme,
 } from "@adobe/react-spectrum";
 import axios from "axios";
 import { os, path } from "../lib/cep/node";
@@ -40,7 +40,8 @@ import "./main.scss";
 const Main = () => {
   const [bgColor, setBgColor] = useState("#282c34");
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
-  const [description, setDescription] = useState("Description goes here...");
+  const [isLoading, setIsLoading] = useState(false);
+  const [descriptions, setDescriptions] = useState<string[]>([]);
 
   // const exampleScript = `(new XMPCEPHelper("KBRG")).getXMP({"filename":"C:\\Users\\brian.nickila\\Pictures\\Iceland_2021\\brian-5.jpg","id":"3-x-default","namespace":"http://purl.org/dc/elements/1.1/","prefix":"dc","propertyName":"description","displayName":"Description","altLang":"x-default","altLangDefault":false})`;
   // const sampleGetXMP = `(new XMPCEPHelper("KBRG")).getXMP({"filename":"C:\\Users\\brian.nickila\\Pictures\\Iceland_2021\\brian-5.jpg","id":"3-x-default","namespace":"http://purl.org/dc/elements/1.1/","prefix":"dc","propertyName":"description","displayName":"Description","altLang":"x-default","altLangDefault":false})`;
@@ -71,18 +72,26 @@ const Main = () => {
   }, []);
 
   const handlePress = async () => {
+    setDescriptions([]);
+    setIsLoading(true);
     for (let selectedFile of selectedFiles) {
       console.log("selectedFile: ", selectedFile);
       const response = await axios.get(
         `http://127.0.0.1:8000/generate_caption?url=${selectedFile}`
       );
+      if (response?.data?.caption) {
+        setDescriptions((prevDescription) => [
+          ...prevDescription,
+          response?.data?.caption,
+        ]);
+      }
       console.log("response: ", response);
-      // setDescription()
     }
+    setIsLoading(false);
   };
 
   return (
-    <Provider theme={defaultTheme}>
+    <Provider theme={darkTheme}>
       <View
         borderWidth="thin"
         borderColor="dark"
@@ -90,12 +99,21 @@ const Main = () => {
         padding="size-250"
         height="size-5000"
       >
-        <ActionButton staticColor="white" onPress={handlePress}>
+        <Button
+          staticColor="white"
+          onPress={handlePress}
+          variant="primary"
+          isPending={isLoading}
+        >
           AI Description
-        </ActionButton>
+        </Button>
         <br />
         <br />
-        <Text>{description}</Text>
+        {descriptions.map((description) => (
+          <View key={description}>
+            <Text>{description}</Text>
+          </View>
+        ))}
       </View>
     </Provider>
   );
