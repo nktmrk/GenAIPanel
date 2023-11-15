@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
 // import { loadJSX } from "../lib/utils/load";
 import { SystemPath } from "../lib/cep/csinterface";
-import { defaultTheme, Provider, Button } from "@adobe/react-spectrum";
-import axios from 'axios'
+import AssetsAdded from "@spectrum-icons/workflow/AssetsAdded";
+import {
+  defaultTheme,
+  Provider,
+  Button,
+  View,
+  ActionButton,
+  Text,
+} from "@adobe/react-spectrum";
+import axios from "axios";
 import { os, path } from "../lib/cep/node";
 
 import {
@@ -32,6 +40,7 @@ import "./main.scss";
 const Main = () => {
   const [bgColor, setBgColor] = useState("#282c34");
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [description, setDescription] = useState("Description goes here...");
 
   // const exampleScript = `(new XMPCEPHelper("KBRG")).getXMP({"filename":"C:\\Users\\brian.nickila\\Pictures\\Iceland_2021\\brian-5.jpg","id":"3-x-default","namespace":"http://purl.org/dc/elements/1.1/","prefix":"dc","propertyName":"description","displayName":"Description","altLang":"x-default","altLangDefault":false})`;
   // const sampleGetXMP = `(new XMPCEPHelper("KBRG")).getXMP({"filename":"C:\\Users\\brian.nickila\\Pictures\\Iceland_2021\\brian-5.jpg","id":"3-x-default","namespace":"http://purl.org/dc/elements/1.1/","prefix":"dc","propertyName":"description","displayName":"Description","altLang":"x-default","altLangDefault":false})`;
@@ -61,20 +70,33 @@ const Main = () => {
     console.log(csi.getApplicationID());
   }, []);
 
-  const handlePress = async() => {
-    for(let selectedFile of selectedFiles)
-    {
-      console.log('selectedFile: ', selectedFile)
-      const response = await axios.get(`http://127.0.0.1:8000/generate_caption?url=${selectedFile}`)
-      console.log('response: ', response)
+  const handlePress = async () => {
+    for (let selectedFile of selectedFiles) {
+      console.log("selectedFile: ", selectedFile);
+      const response = await axios.get(
+        `http://127.0.0.1:8000/generate_caption?url=${selectedFile}`
+      );
+      console.log("response: ", response);
+      // setDescription()
     }
   };
 
   return (
     <Provider theme={defaultTheme}>
-      <Button variant="accent" onPress={handlePress}>
-        Gen Desc
-      </Button>
+      <View
+        borderWidth="thin"
+        borderColor="dark"
+        borderRadius="medium"
+        padding="size-250"
+        height="size-5000"
+      >
+        <ActionButton staticColor="white" onPress={handlePress}>
+          AI Description
+        </ActionButton>
+        <br />
+        <br />
+        <Text>{description}</Text>
+      </View>
     </Provider>
   );
 };
