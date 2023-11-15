@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 // import { loadJSX } from "../lib/utils/load";
 import { SystemPath } from "../lib/cep/csinterface";
-
-import { saveAs } from "file-saver";
 import { defaultTheme, Provider, Button } from "@adobe/react-spectrum";
+import axios from 'axios'
 import { os, path } from "../lib/cep/node";
 
 import {
@@ -62,45 +61,13 @@ const Main = () => {
     console.log(csi.getApplicationID());
   }, []);
 
-  const handlePress = () => {
-    console.log("Pressed");
-    console.log(selectedFiles);
-    // runEvalScript();
-    // const data = window.cep.encoding.convertion.utf8_to_b64(JSON.stringify(view));
-    // const someObj = { filename: selectedFiles[0] };
-    // const data = window.cep.encoding.convertion.utf8_to_b64(
-    //   JSON.stringify(someObj)
-    // );
-    const data =
-      "Here is the data that will be written to the text file located in the same location as the image.";
-
-    // let filePath = window.cep.fs.showSaveDialogEx(
-    //   "adobe_cmp_view",
-    //   "",
-    //   ["json"],
-    //   selectedFiles[0]
-    // ).data;
-    // currently just grabbing the first one in the array which will work for one at a time. we'll change this to a map
-    let filePath = selectedFiles[0].replace(/\.[^/.]+$/, "");
-
-    // const filePath =
-    //   "C:\\Users\\brian.nickila\\Desktop\\Adobe\\CMP\\somethingelse";
-    const result = window.cep.fs.writeFile(
-      filePath,
-      data,
-      window.cep.encoding.utf8
-    );
-    if (result.err === 0) {
-      console.log(`Saved the View to ${filePath}`);
-      return filePath;
-    } else {
-      console.log(`Unable to save View. Error writing new file: ${result.err}`);
-      throw result.err;
+  const handlePress = async() => {
+    for(let selectedFile of selectedFiles)
+    {
+      console.log('selectedFile: ', selectedFile)
+      const response = await axios.get(`http://127.0.0.1:8000/generate_caption?url=${selectedFile}`)
+      console.log('response: ', response)
     }
-    // var blob = new Blob(["here's some stuff"], {
-    //   type: "text/plain;charset=utf-8",
-    // });
-    // saveAs(blob, "sample-file.txt");
   };
 
   return (
