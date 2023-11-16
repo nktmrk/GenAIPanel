@@ -6,7 +6,7 @@ import cepConfig from "./cep.config";
 import path from "path";
 import { extendscriptConfig } from "./vite.es.config";
 
-const extensions = [".js", ".ts", ".tsx"];
+const extensions = [".js", ".ts", ".tsx", ".jsx"];
 
 const devDist = "dist";
 const cepDist = "cep";
@@ -60,6 +60,7 @@ export default defineConfig({
   preview: {
     port: cepConfig.servePort,
   },
+  publicDir: "../public",
 
   build: {
     sourcemap: isPackage ? cepConfig.zxp.sourceMap : cepConfig.build?.sourceMap,

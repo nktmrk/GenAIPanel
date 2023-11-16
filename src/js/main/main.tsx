@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 // import { loadJSX } from "../lib/utils/load";
-import { SystemPath } from "../lib/cep/csinterface";
+import CSInterface, { SystemPath } from "../lib/cep/csinterface";
 import AssetsAdded from "@spectrum-icons/workflow/AssetsAdded";
 import {
   defaultTheme,
@@ -9,6 +9,7 @@ import {
   View,
   Text,
   darkTheme,
+  ActionButton,
 } from "@adobe/react-spectrum";
 import axios from "axios";
 import { os, path } from "../lib/cep/node";
@@ -24,18 +25,14 @@ import {
 
 import "./main.scss";
 
-// export const loadJSX = (fileName: string) => {
-//   // const systemPath = new SystemPath();
-//   const extensionRoot = `${csi.getSystemPath(SystemPath.EXTENSION)}/host/`;
-//   console.log(`Loading JSX: ${extensionRoot}${fileName}`);
-//   evalFile(`${extensionRoot}${fileName}`);
-//   // return new Promise((resolve, reject) => {
-//   //   csi.evalScript(`$.evalFile("${extensionRoot}${fileName}")`, resolve);
-//   // });
-// };
+const csInterface = new CSInterface();
+const loadJSX = (fileName: string) => {
+  const extensionRoot = `${csi.getSystemPath(SystemPath.EXTENSION)}/`;
+  console.log(`Loading JSX: ${extensionRoot}${fileName}`);
+  evalFile(`${extensionRoot}${fileName}`);
+};
 
-// loadJSX("json2.js");
-// loadJSX("xmp.jsx");
+loadJSX("xmp.jsx");
 
 const Main = () => {
   const [bgColor, setBgColor] = useState("#282c34");
@@ -43,27 +40,30 @@ const Main = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [descriptions, setDescriptions] = useState<string[]>([]);
 
-  // const exampleScript = `(new XMPCEPHelper("KBRG")).getXMP({"filename":"C:\\Users\\brian.nickila\\Pictures\\Iceland_2021\\brian-5.jpg","id":"3-x-default","namespace":"http://purl.org/dc/elements/1.1/","prefix":"dc","propertyName":"description","displayName":"Description","altLang":"x-default","altLangDefault":false})`;
-  // const sampleGetXMP = `(new XMPCEPHelper("KBRG")).getXMP({"filename":"C:\\Users\\brian.nickila\\Pictures\\Iceland_2021\\brian-5.jpg","id":"3-x-default","namespace":"http://purl.org/dc/elements/1.1/","prefix":"dc","propertyName":"description","displayName":"Description","altLang":"x-default","altLangDefault":false})`;
-  // const sampleSetXMP = `new XMPCEPHelper("KBRG")).setXMP({"id":"15","filename":"C:\\Users\\brian.nickila\\Pictures\\Iceland_2021\\brian-5.jpg","value":{"coat":{"namespace":"http://pet.adobe.com","prefix":"pet","value":"waffles","arrayType":"bag"}}})`;
-  // const runEvalScript = () => {
-  // console.log(sampleSetXMP);
-  // return new Promise((resolve, reject) => {
-  //   console.log("inside promise");
-  //   csi.evalScript(
-  //     `new XMPCEPHelper("KBRG")).setXMP({"id":"15","filename":"C:\\Users\\brian.nickila\\Pictures\\Iceland_2021\\brian-5.jpg","value":{"coat":{"namespace":"http://pet.adobe.com","prefix":"pet","value":"waffles","arrayType":"bag"}}})`,
-  //     resolve
-  //   );
-  //   console.log(resolve);
-  // });
-  // };
+  var stuff = {
+    id: "15",
+    filename: "C:\\Users\\brian.nickila\\Pictures\\Iceland_2021\\brian-5.jpg",
+    property: "coat",
+    namespace: "http://pet.adobe.com",
+    prefix: "pet",
+    value: "jelly beans",
+    arrayType: "bag",
+  };
+
+  // const other =
+  // '{"id":"15","filename":"C:\\Users\\brian.nickila\\Pictures\\Iceland_2021\\brian-5.jpg","property":"coat","namespace":"http://pet.adobe.com","prefix":"pet","value":"jelly beans","arrayType":"bag"}';
+
+  // const stuffObj = JSON.stringify(stuff);
+  // console.log(stuffObj);
+
+  // var y = x.setXMP(stuff);
+  const file = "C:\\Users\\brian.nickila\\Pictures\\Iceland_2021\\brian-5.jpg";
 
   useEffect(() => {
     if (window.cep) {
       subscribeBackgroundColor(setBgColor);
     }
     csi.addEventListener("com.adobe.genaipanel.select", (event: any) => {
-      console.log("here is something");
       setSelectedFiles(event.data);
       console.log(event.data);
     });
@@ -73,21 +73,26 @@ const Main = () => {
 
   const handlePress = async () => {
     setDescriptions([]);
-    setIsLoading(true);
+    // setIsLoading(true);
     for (let selectedFile of selectedFiles) {
       console.log("selectedFile: ", selectedFile);
-      const response = await axios.get(
-        `http://127.0.0.1:8000/generate_caption?url=${selectedFile}`
-      );
-      if (response?.data?.caption) {
-        setDescriptions((prevDescription) => [
-          ...prevDescription,
-          response?.data?.caption,
-        ]);
-      }
-      console.log("response: ", response);
+      // const response = await axios.get(
+      //   `http://127.0.0.1:8000/generate_caption?url=${selectedFile}`
+      // );
+      // if (response?.data?.caption) {
+      //   setDescriptions((prevDescription) => [
+      //     ...prevDescription,
+      //     response?.data?.caption,
+      //   ]);
+      // }
+      // console.log("response: ", response);
+      const newFile = selectedFile.replace(/\\/g, "\\\\") || "";
+      const response =
+        "This will be replaced with the description from the API response.";
+      const setScript = `setGenAIXMP("${newFile}", "${response}")`;
+      console.log("running evalScript...");
+      csInterface.evalScript(setScript, () => {});
     }
-    setIsLoading(false);
   };
 
   return (
@@ -99,6 +104,16 @@ const Main = () => {
         padding="size-250"
         height="size-5000"
       >
+        {/* <Button
+          staticColor="white"
+          onPress={runEvalScript}
+          variant="primary"
+          isPending={isLoading}
+        >
+          Set Metadata
+        </Button> */}
+        <br />
+        <br />
         <Button
           staticColor="white"
           onPress={handlePress}
