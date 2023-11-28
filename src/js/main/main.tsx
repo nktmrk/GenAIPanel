@@ -25,15 +25,15 @@ import {
 import "./main.scss";
 
 interface xmpObj {
-  filename: string;
+  filePath: string;
   caption: string;
 }
 
 const csInterface = new CSInterface();
-const loadJSX = (fileName: string) => {
+const loadJSX = (filename: string) => {
   const extensionRoot = `${csi.getSystemPath(SystemPath.EXTENSION)}/`;
-  console.log(`Loading JSX: ${extensionRoot}${fileName}`);
-  evalFile(`${extensionRoot}${fileName}`);
+  console.log(`Loading JSX: ${extensionRoot}${filename}`);
+  evalFile(`${extensionRoot}${filename}`);
 };
 
 loadJSX("xmp.jsx");
@@ -55,7 +55,10 @@ const Main = () => {
         setXmpData([]);
       }
     });
-  }, [fetchData]);
+
+    return () =>
+      csi.removeEventListener("com.adobe.genaipanel.select", fetchData, {});
+  }, []);
 
   const getXmpData = (files: string[]) => {
     let newData: xmpObj[] = [];
@@ -74,7 +77,7 @@ const Main = () => {
           `(new XMPCEPHelper("KBRG")).getXMP(${JSON.stringify(xmpRequest)})`,
           (result: any) => {
             result = JSON.parse(result);
-            newData.push({ filename: files[i], caption: result.result });
+            newData.push({ filePath: files[i], caption: result.result });
             {
               i === files.length - 1 && setXmpData(newData);
             }
@@ -92,8 +95,8 @@ const Main = () => {
     // setIsLoading(true);
     let fileArr: string[] = [];
     for (let data of xmpData) {
-      console.log("selectedFile: ", data.filename);
-      fileArr.push(data.filename);
+      console.log("selectedFile: ", data.filePath);
+      fileArr.push(data.filePath);
       // const response = await axios.get(
       //   `http://127.0.0.1:8000/generate_caption?url=${selectedFile}`
       // );
@@ -108,7 +111,7 @@ const Main = () => {
         "This will be replaced with the ONE from the API caption.";
       var dataObj = {
         id: "0",
-        filename: data.filename,
+        filename: data.filePath,
         propertyName: "genAIDescription",
         namespace: "http://ns.adobe.com/xap/1.0/",
         prefix: "xmp",
@@ -136,16 +139,15 @@ const Main = () => {
         <br />
         <View>
           {xmpData.map((data) => {
-            const n = data.filename.lastIndexOf("\\");
-            const file = data.filename.substring(n + 1);
-
+            const n = data.filePath.lastIndexOf("\\");
+            const filename = data.filePath.substring(n + 1);
             return (
               <View
                 paddingTop="size-200"
-                aria-label="filename and caption"
-                key={data.filename}
+                aria-label="filePath and caption"
+                key={data.filePath}
               >
-                <Text aria-label="filename">{file}</Text>
+                <Text aria-label="filePath">{filename}</Text>
                 <br />
                 <TextArea
                   aria-label="caption"
