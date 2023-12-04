@@ -13,6 +13,7 @@ import {
   TextArea,
   Flex,
   ActionButton,
+  darkTheme,
 } from "@adobe/react-spectrum";
 
 import {
@@ -131,7 +132,7 @@ const Main = () => {
   };
 
   return (
-    <Provider theme={defaultTheme}>
+    <Provider theme={darkTheme}>
       <View
         borderWidth="thin"
         borderColor="dark"
