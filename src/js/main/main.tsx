@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { os, path } from "../lib/cep/node";
 import CSInterface, { SystemPath } from "../lib/cep/csinterface";
+import Checkmark from "@spectrum-icons/workflow/Checkmark";
+import Undo from "@spectrum-icons/workflow/Undo";
 
 import {
   Button,
@@ -8,9 +10,9 @@ import {
   Provider,
   View,
   Text,
-  ListView,
-  Item,
   TextArea,
+  Flex,
+  ActionButton,
 } from "@adobe/react-spectrum";
 
 import {
@@ -42,6 +44,7 @@ const Main = () => {
   const [xmpData, setXmpData] = useState<xmpObj[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [newCaption, setNewCaption] = useState("");
+  const [filePending, setFilePending] = useState("");
 
   const fetchData = async (files: string[]) => {
     await getXmpData(files);
@@ -141,20 +144,43 @@ const Main = () => {
           {xmpData.map((data) => {
             const n = data.filePath.lastIndexOf("\\");
             const filename = data.filePath.substring(n + 1);
+
             return (
-              <View
-                paddingTop="size-200"
-                aria-label="filePath and caption"
-                key={data.filePath}
-              >
-                <Text aria-label="filePath">{filename}</Text>
-                <br />
+              <Flex direction="column" gap="size-100" key={data.filePath}>
                 <TextArea
+                  width="size-4000"
+                  label={filename}
                   aria-label="caption"
                   value={data.caption}
-                  onChange={setNewCaption}
+                  onChange={(val) => {
+                    // change the current object in xmpData and set xmpData with the updated value
+                    if (val !== data.caption) {
+                      setFilePending(data.filePath);
+                    } else {
+                      setFilePending("");
+                    }
+                    const obj = xmpData.find(
+                      (x) => x.filePath === data.filePath
+                    );
+
+                    setNewCaption(val);
+                  }}
                 />
-              </View>
+                <Flex direction="row" gap="size-100" justifyContent="end">
+                  <ActionButton
+                    isQuiet
+                    isDisabled={filePending !== data.filePath}
+                  >
+                    <Undo size="S" />
+                  </ActionButton>
+                  <ActionButton
+                    isQuiet
+                    isDisabled={filePending !== data.filePath}
+                  >
+                    <Checkmark size="S" />
+                  </ActionButton>
+                </Flex>
+              </Flex>
             );
           })}
         </View>
