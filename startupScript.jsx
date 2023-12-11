@@ -30,7 +30,7 @@ var onSelectedThumb = function(event) {
                 selectedFilename.push(thumbs[i].path);
             }
         }
-        dispatchCepEvent("com.adobe.genaipanel.select", selectedFilename);
+        dispatchCepEvent("com.adobe.custom-metadata-cep.selectEvent", selectedFilename);
     }
 }
 
