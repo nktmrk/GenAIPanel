@@ -1,18 +1,20 @@
-import { useEffect, useState } from "react";
-// import { loadJSX } from "../lib/utils/load";
+import { useEffect, useState, useCallback } from "react";
+import { os, path } from "../lib/cep/node";
 import CSInterface, { SystemPath } from "../lib/cep/csinterface";
-import AssetsAdded from "@spectrum-icons/workflow/AssetsAdded";
+import Checkmark from "@spectrum-icons/workflow/Checkmark";
+import Undo from "@spectrum-icons/workflow/Undo";
+
 import {
+  Button,
   defaultTheme,
   Provider,
-  Button,
   View,
   Text,
-  darkTheme,
+  TextArea,
+  Flex,
   ActionButton,
+  darkTheme,
 } from "@adobe/react-spectrum";
-import axios from "axios";
-import { os, path } from "../lib/cep/node";
 
 import {
   csi,
@@ -25,57 +27,80 @@ import {
 
 import "./main.scss";
 
+interface xmpObj {
+  filePath: string;
+  caption: string;
+}
+
 const csInterface = new CSInterface();
-const loadJSX = (fileName: string) => {
+const loadJSX = (filename: string) => {
   const extensionRoot = `${csi.getSystemPath(SystemPath.EXTENSION)}/`;
-  console.log(`Loading JSX: ${extensionRoot}${fileName}`);
-  evalFile(`${extensionRoot}${fileName}`);
+  console.log(`Loading JSX: ${extensionRoot}${filename}`);
+  evalFile(`${extensionRoot}${filename}`);
 };
 
 loadJSX("xmp.jsx");
 
 const Main = () => {
-  const [bgColor, setBgColor] = useState("#282c34");
-  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [xmpData, setXmpData] = useState<xmpObj[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [descriptions, setDescriptions] = useState<string[]>([]);
+  const [newCaption, setNewCaption] = useState("");
+  const [filePending, setFilePending] = useState("");
 
-  var stuff = {
-    id: "15",
-    filename: "C:\\Users\\brian.nickila\\Pictures\\Iceland_2021\\brian-5.jpg",
-    property: "coat",
-    namespace: "http://pet.adobe.com",
-    prefix: "pet",
-    value: "jelly beans",
-    arrayType: "bag",
+  const fetchData = async (files: string[]) => {
+    await getXmpData(files);
   };
 
-  // const other =
-  // '{"id":"15","filename":"C:\\Users\\brian.nickila\\Pictures\\Iceland_2021\\brian-5.jpg","property":"coat","namespace":"http://pet.adobe.com","prefix":"pet","value":"jelly beans","arrayType":"bag"}';
-
-  // const stuffObj = JSON.stringify(stuff);
-  // console.log(stuffObj);
-
-  // var y = x.setXMP(stuff);
-  const file = "C:\\Users\\brian.nickila\\Pictures\\Iceland_2021\\brian-5.jpg";
-
   useEffect(() => {
-    if (window.cep) {
-      subscribeBackgroundColor(setBgColor);
-    }
     csi.addEventListener("com.adobe.genaipanel.select", (event: any) => {
-      setSelectedFiles(event.data);
-      console.log(event.data);
+      if (event.data.length > 0) {
+        fetchData(event.data).catch(console.error);
+      } else {
+        setXmpData([]);
+      }
     });
 
-    console.log(csi.getApplicationID());
+    return () =>
+      csi.removeEventListener("com.adobe.genaipanel.select", fetchData, {});
   }, []);
 
+  const getXmpData = (files: string[]) => {
+    let newData: xmpObj[] = [];
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const xmpRequest = {
+          id: "0",
+          filename: files[i],
+          propertyName: "genAIDescription",
+          namespace: "http://ns.adobe.com/xap/1.0/",
+          prefix: "xmp",
+          displayName: "Gen AI Desc",
+        };
+
+        csInterface.evalScript(
+          `(new XMPCEPHelper("KBRG")).getXMP(${JSON.stringify(xmpRequest)})`,
+          (result: any) => {
+            result = JSON.parse(result);
+            newData.push({ filePath: files[i], caption: result.result });
+            {
+              i === files.length - 1 && setXmpData(newData);
+            }
+          }
+        );
+      }
+      return;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const handlePress = async () => {
-    setDescriptions([]);
+    // setDescriptions([]);
     // setIsLoading(true);
-    for (let selectedFile of selectedFiles) {
-      console.log("selectedFile: ", selectedFile);
+    let fileArr: string[] = [];
+    for (let data of xmpData) {
+      console.log("selectedFile: ", data.filePath);
+      fileArr.push(data.filePath);
       // const response = await axios.get(
       //   `http://127.0.0.1:8000/generate_caption?url=${selectedFile}`
       // );
@@ -86,13 +111,24 @@ const Main = () => {
       //   ]);
       // }
       // console.log("response: ", response);
-      const newFile = selectedFile.replace(/\\/g, "\\\\") || "";
-      const response =
-        "This will be replaced with the description from the API response.";
-      const setScript = `setGenAIXMP("${newFile}", "${response}")`;
-      console.log("running evalScript...");
-      csInterface.evalScript(setScript, () => {});
+      const caption =
+        "This will be replaced with the ONE from the API caption.";
+      var dataObj = {
+        id: "0",
+        filename: data.filePath,
+        propertyName: "genAIDescription",
+        namespace: "http://ns.adobe.com/xap/1.0/",
+        prefix: "xmp",
+        value: caption,
+        arrayType: "bag",
+      };
+
+      csInterface.evalScript(
+        `new XMPCEPHelper("KBRG").setXMP(${JSON.stringify(dataObj)})`,
+        () => {}
+      );
     }
+    fetchData(fileArr).catch(console.error);
   };
 
   return (
@@ -100,21 +136,58 @@ const Main = () => {
       <View
         borderWidth="thin"
         borderColor="dark"
-        borderRadius="medium"
-        padding="size-250"
-        height="size-5000"
+        padding="size-200"
+        minHeight="size-6000"
       >
-        {/* <Button
-          staticColor="white"
-          onPress={runEvalScript}
-          variant="primary"
-          isPending={isLoading}
-        >
-          Set Metadata
-        </Button> */}
+        <Text aria-label="selected files">Selected Files:</Text>
         <br />
+        <View>
+          {xmpData.map((data) => {
+            const n = data.filePath.lastIndexOf("\\");
+            const filename = data.filePath.substring(n + 1);
+
+            return (
+              <Flex direction="column" gap="size-100" key={data.filePath}>
+                <TextArea
+                  width="size-4000"
+                  label={filename}
+                  aria-label="caption"
+                  value={data.caption}
+                  onChange={(val) => {
+                    // change the current object in xmpData and set xmpData with the updated value
+                    if (val !== data.caption) {
+                      setFilePending(data.filePath);
+                    } else {
+                      setFilePending("");
+                    }
+                    const obj = xmpData.find(
+                      (x) => x.filePath === data.filePath
+                    );
+
+                    setNewCaption(val);
+                  }}
+                />
+                <Flex direction="row" gap="size-100" justifyContent="end">
+                  <ActionButton
+                    isQuiet
+                    isDisabled={filePending !== data.filePath}
+                  >
+                    <Undo size="S" />
+                  </ActionButton>
+                  <ActionButton
+                    isQuiet
+                    isDisabled={filePending !== data.filePath}
+                  >
+                    <Checkmark size="S" />
+                  </ActionButton>
+                </Flex>
+              </Flex>
+            );
+          })}
+        </View>
         <br />
         <Button
+          aria-label="ai description button"
           staticColor="white"
           onPress={handlePress}
           variant="primary"
@@ -122,13 +195,6 @@ const Main = () => {
         >
           AI Description
         </Button>
-        <br />
-        <br />
-        {descriptions.map((description) => (
-          <View key={description}>
-            <Text>{description}</Text>
-          </View>
-        ))}
       </View>
     </Provider>
   );

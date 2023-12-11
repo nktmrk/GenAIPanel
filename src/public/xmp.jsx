@@ -1,16 +1,3 @@
-function setGenAIXMP(filename, value) {
-  var xmpCEPHelper = new XMPCEPHelper("KBRG");
-  var xmpData = {
-    id: "0",
-    filename: filename,
-    propertyName: "coat",
-    namespace: "http://pet.adobe.com",
-    prefix: "pet",
-    value: value,
-    arrayType: "bag",
-  };
-  xmpCEPHelper.setXMP(xmpData);
-}
 function XMPTarget(appID) {
   "use strict";
   var xmpFile,

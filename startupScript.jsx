@@ -34,7 +34,6 @@ var onSelectedThumb = function(event) {
     }
 }
 
-alert(JSON.stringify(app))
 if (app.name == "bridge") {
 	app.eventHandlers = [];
     app.synchronousMode = true;
